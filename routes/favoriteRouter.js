@@ -49,11 +49,6 @@ favoriteRouter.route('/')
                 if (favorite.dishes.indexOf(req.body[i]._id) === -1) {
                     favorite.dishes.push(req.body[i]._id);
                 }
-                // else {
-                //     err = new Error('This Dish ' + req.body[i]._id + ' is already added to favorite');
-                //     err.status = 403;
-                //     return next(err);
-                // }
             }
             favorite.save()
             .then((favorite) => {
@@ -86,6 +81,27 @@ favoriteRouter.route('/')
 
 favoriteRouter.route('/:dishId')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, authenticate.veryfiUser, (req, res, next) => {
+    Favorites.findOne({user: req.user._id})
+    .then((favorites) => {
+        if (!favorites) {
+            res.statusCode = 200;
+            res.setHeader('ContentType', 'application/json');
+            return res.json({"exists":false, "favorites": favorites});
+        } else {
+            if (favorites.dishess.indexOf(req.params.dishId) < 0) {
+                res.statusCode = 200;
+                res.setHeader('ContentType', 'application/json');
+                return res.json({"exists":false, "favorites": favorites});
+            } else {
+                res.statusCode = 200;
+                res.setHeader('ContentType', 'application/json');
+                return res.json({"exists":true, "favorites": favorites});
+            }
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err))
+})
 .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Favorites.findOne({user: req.user._id})
     .then((favorite) => {
